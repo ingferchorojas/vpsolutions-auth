@@ -1,0 +1,33 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: fernandorojas
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: vpsolutions
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: vpsolutions-auth
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  environment:
+    MONGODB_URI: ${env:MONGODB_URI}
+    DB_NAME: ${env:DB_NAME}
+    JWT_SECRET: ${env:JWT_SECRET}
+
+plugins:
+  - serverless-offline
+
+functions:
+  register:
+    handler: handler.register
+    events:
+      - httpApi:
+          path: /user/register
+          method: post
+  login:
+    handler: handler.login
+    events:
+      - httpApi:
+          path: /user/login
+          method: post
