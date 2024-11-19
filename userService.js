@@ -1,46 +1,43 @@
-const { connectToDatabase } = require("./database");
 const bcrypt = require("bcrypt");
-const { generateToken } = require("./utils"); // Importar la función para generar el token
+const { generateToken } = require("./utils");
+const { connectToDatabase } = require("./database");
+const User = require("./userModel");
 
 async function saveUser(userData) {
-  const db = await connectToDatabase();
-  const collection = db.collection("users");
+  await connectToDatabase(); // Asegurar conexión con MongoDB
 
-  // Buscar si el email ya existe
-  const existingUser = await collection.findOne({ email: userData.email });
+  // Verificar si el email ya existe
+  const existingUser = await User.findOne({ email: userData.email });
   if (existingUser) {
     throw new Error("El email ya está registrado.");
   }
 
-  // Insertar nuevo usuario
-  const result = await collection.insertOne({
+  // Crear y guardar el usuario
+  const hashedPassword = await bcrypt.hash(userData.password, 10);
+  const newUser = new User({
     ...userData,
-    created_at: new Date(),
+    password: hashedPassword,
   });
+  await newUser.save();
 
-  return result.insertedId;
+  return newUser._id;
 }
 
 async function loginUser(email, password) {
-  const db = await connectToDatabase();
-  const collection = db.collection("users");
+  await connectToDatabase(); // Asegurar conexión con MongoDB
 
-  // Buscar si el usuario existe
-  const user = await collection.findOne({ email });
+  const user = await User.findOne({ email });
   if (!user) {
     throw new Error("Correo electrónico o contraseña incorrectos.");
   }
 
-  // Verificar si la contraseña es correcta
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     throw new Error("Correo electrónico o contraseña incorrectos.");
   }
 
-  // Generar un token JWT
-  const token = generateToken(user._id); // Generar token con el userId
-
-  return { token, userId: user._id }; // Retornar el token y el userId
+  const token = generateToken(user._id);
+  return { token, userId: user._id };
 }
 
-module.exports = { saveUser, loginUser }; // Exportar ambas funciones
+module.exports = { saveUser, loginUser };
