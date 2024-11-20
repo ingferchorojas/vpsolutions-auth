@@ -26,14 +26,15 @@ async function saveUser(userData) {
 async function loginUser(email, password) {
   await connectToDatabase(); // Asegurar conexión con MongoDB
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email, enabled: true });
   if (!user) {
     throw new Error("Correo electrónico o contraseña incorrectos.");
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
+  console.log(password, user.password)
   if (!isPasswordValid) {
-    throw new Error("Correo electrónico o contraseña incorrectos.");
+    throw new Error("Correo electrónico o contraseña incorrectoss.");
   }
 
   const token = generateToken(user._id);

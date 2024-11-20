@@ -22,16 +22,14 @@ exports.register = async (event) => {
       };
     }
 
-    // Generar hash de la contraseña
-    const hashedPassword = await hashPassword(password);
-
     // Intentar guardar el usuario
     try {
       const userId = await saveUser({
         first_name,
         last_name,
         email,
-        password: hashedPassword,
+        password,
+        enabled: true
       });
 
       return {

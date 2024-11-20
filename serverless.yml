@@ -1,8 +1,5 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
 org: fernandorojas
-# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
 app: vpsolutions
-# "service" is the name of this project. This will also be added to your AWS resource names.
 service: vpsolutions-auth
 
 provider:
@@ -14,6 +11,18 @@ provider:
     MONGODB_URI: ${env:MONGODB_URI}
     DB_NAME: ${env:DB_NAME}
     JWT_SECRET: ${env:JWT_SECRET}
+  httpApi:
+    cors:
+      allowedOrigins:
+        - "*"
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+      allowedMethods:
+        - OPTIONS
+        - GET
+        - POST
+      allowCredentials: false
 
 plugins:
   - serverless-offline
