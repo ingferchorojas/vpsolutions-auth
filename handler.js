@@ -1,5 +1,4 @@
 const { saveUser, loginUser } = require("./userService");
-const { hashPassword } = require("./utils");
 
 require("dotenv").config();
 
