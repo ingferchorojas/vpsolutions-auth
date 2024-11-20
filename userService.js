@@ -32,9 +32,8 @@ async function loginUser(email, password) {
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
-  console.log(password, user.password)
   if (!isPasswordValid) {
-    throw new Error("Correo electrónico o contraseña incorrectoss.");
+    throw new Error("Correo electrónico o contraseña incorrectos.");
   }
 
   const token = generateToken(user._id);
