@@ -6,22 +6,22 @@ exports.register = async (event) => {
   try {
     const body = JSON.parse(event.body);
 
-    // Validar campos requeridos
+    // Validate required fields
     const { first_name, last_name, email, password } = body;
     if (!first_name || !last_name || !email || !password) {
       return {
         statusCode: 400,
         body: JSON.stringify({
-          message: "Todos los campos son obligatorios.",
+          message: "All fields are required.",
           error: true,
         }),
         headers: {
-          "Content-Type": "application/json", // Header para JSON
+          "Content-Type": "application/json", // Header for JSON
         },
       };
     }
 
-    // Intentar guardar el usuario
+    // Try to save the user
     try {
       const userId = await saveUser({
         first_name,
@@ -34,43 +34,43 @@ exports.register = async (event) => {
       return {
         statusCode: 201,
         body: JSON.stringify({
-          message: "Usuario registrado correctamente.",
+          message: "User registered successfully.",
           data: {
             userId
           },
           error: false,
         }),
         headers: {
-          "Content-Type": "application/json", // Header para JSON
+          "Content-Type": "application/json", // Header for JSON
         },
       };
     } catch (err) {
-      // Verificar si el error es por duplicado de email
-      if (err.message === "El email ya está registrado.") {
+      // Check if the error is due to duplicate email
+      if (err.message === "The email is already registered.") {
         return {
-          statusCode: 409, // Código de conflicto
+          statusCode: 409, // Conflict status code
           body: JSON.stringify({
-            message: "El email ya está registrado.",
+            message: "The email is already registered.",
             error: true,
           }),
           headers: {
-            "Content-Type": "application/json", // Header para JSON
+            "Content-Type": "application/json", // Header for JSON
           },
         };
       }
 
-      throw err; // Lanzar cualquier otro error
+      throw err; // Throw any other error
     }
   } catch (error) {
-    console.error("Error al registrar usuario:", error);
+    console.error("Error registering user:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: "Error interno del servidor.",
+        message: "Internal server error.",
         error: true,
       }),
       headers: {
-        "Content-Type": "application/json", // Header para JSON
+        "Content-Type": "application/json", // Header for JSON
       },
     };
   }
@@ -80,60 +80,60 @@ exports.login = async (event) => {
   try {
     const { email, password } = JSON.parse(event.body);
 
-    // Validar los campos
+    // Validate fields
     if (!email || !password) {
       return {
         statusCode: 400,
         body: JSON.stringify({
-          message: "El email y la contraseña son obligatorios.",
+          message: "Email and password are required.",
           error: true,
         }),
         headers: {
-          "Content-Type": "application/json", // Header para JSON
+          "Content-Type": "application/json", // Header for JSON
         },
       };
     }
 
-    // Intentar hacer login
+    // Try to log in
     const { token, userId } = await loginUser(email, password);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: "Login exitoso.",
+        message: "Login successful.",
         data: { token, userId },
         error: false,
       }),
       headers: {
-        "Content-Type": "application/json", // Header para JSON
+        "Content-Type": "application/json", // Header for JSON
       },
     };
   } catch (error) {
-    console.error("Error al hacer login:", error);
+    console.error("Error logging in:", error);
     
-    // Si es un error de validación (incorrecto email o password)
-    if (error.message === "Correo electrónico o contraseña incorrectos.") {
+    // If it's a validation error (incorrect email or password)
+    if (error.message === "Incorrect email or password.") {
       return {
         statusCode: 401,
         body: JSON.stringify({
-          message: "Correo electrónico o contraseña incorrectos.",
+          message: "Incorrect email or password.",
           error: true,
         }),
         headers: {
-          "Content-Type": "application/json", // Header para JSON
+          "Content-Type": "application/json", // Header for JSON
         },
       };
     }
 
-    // Manejo de error general (500)
+    // General error handling (500)
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: "Error interno del servidor.",
+        message: "Internal server error.",
         error: true,
       }),
       headers: {
-        "Content-Type": "application/json", // Header para JSON
+        "Content-Type": "application/json", // Header for JSON
       },
     };
   }

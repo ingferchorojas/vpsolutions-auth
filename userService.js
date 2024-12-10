@@ -4,15 +4,15 @@ const { connectToDatabase, closeDatabaseConnection } = require("./database");
 const User = require("./userModel");
 
 async function saveUser(userData) {
-  await connectToDatabase(); // Asegurar conexión con MongoDB
+  await connectToDatabase(); // Ensure connection to MongoDB
   try {
-    // Verificar si el email ya existe
+    // Check if the email already exists
     const existingUser = await User.findOne({ email: userData.email });
     if (existingUser) {
-      throw new Error("El email ya está registrado.");
+      throw new Error("The email is already registered.");
     }
 
-    // Crear y guardar el usuario
+    // Create and save the user
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     const newUser = new User({
       ...userData,
@@ -22,33 +22,33 @@ async function saveUser(userData) {
 
     return newUser._id;
   } catch (error) {
-    console.error("❌ Error en saveUser:", error);
+    console.error("❌ Error in saveUser:", error);
     throw error;
   } finally {
-    await closeDatabaseConnection(); // Cerrar la conexión después de completar la operación
+    await closeDatabaseConnection(); // Close the connection after completing the operation
   }
 }
 
 async function loginUser(email, password) {
-  await connectToDatabase(); // Asegurar conexión con MongoDB
+  await connectToDatabase(); // Ensure connection to MongoDB
   try {
     const user = await User.findOne({ email, enabled: true });
     if (!user) {
-      throw new Error("Correo electrónico o contraseña incorrectos.");
+      throw new Error("Incorrect email or password.");
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new Error("Correo electrónico o contraseña incorrectos.");
+      throw new Error("Incorrect email or password.");
     }
 
     const token = generateToken(user._id);
     return { token, userId: user._id };
   } catch (error) {
-    console.error("❌ Error en loginUser:", error);
+    console.error("❌ Error in loginUser:", error);
     throw error;
   } finally {
-    await closeDatabaseConnection(); // Cerrar la conexión después de completar la operación
+    await closeDatabaseConnection(); // Close the connection after completing the operation
   }
 }
 
