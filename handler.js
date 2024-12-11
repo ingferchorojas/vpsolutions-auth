@@ -95,13 +95,13 @@ exports.login = async (event) => {
     }
 
     // Try to log in
-    const { token, userId } = await loginUser(email, password);
+    const response = await loginUser(email, password);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         message: "Login successful.",
-        data: { token, userId },
+        data: response,
         error: false,
       }),
       headers: {

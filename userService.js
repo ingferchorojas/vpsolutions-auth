@@ -43,7 +43,7 @@ async function loginUser(email, password) {
     }
 
     const token = generateToken(user._id);
-    return { token, userId: user._id };
+    return { token, userId: user._id, language: user.language };
   } catch (error) {
     console.error("❌ Error in loginUser:", error);
     throw error;
