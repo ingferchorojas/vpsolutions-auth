@@ -3,7 +3,7 @@ const authMiddleware = require("./authMiddleware");
 
 require("dotenv").config();
 
-exports.register = async (event) => {
+const register = async (event) => {
     try {
         const body = JSON.parse(event.body);
 
@@ -77,68 +77,34 @@ exports.register = async (event) => {
     }
 };
 
-exports.login = async (event) => {
+const login = async (event) => {
     try {
-        const { email, password } = JSON.parse(event.body);
-
-        // Validate fields
-        if (!email || !password) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({
-                    message: "Email and password are required.",
-                    error: true,
-                }),
-                headers: {
-                    "Content-Type": "application/json", // Header for JSON
-                },
-            };
-        }
-
-        // Try to log in
-        const response = await loginUser(email, password);
-
+        const result = await loginUser(event);
         return {
-            statusCode: 200,
+            statusCode: result?.statusCode ?? 200,
             body: JSON.stringify({
-                message: "Login successful.",
-                data: response,
-                error: false,
+                message: result?.message ?? "Login",
+                data: result?.data ?? {},
+                error: result.error ?? false,
             }),
             headers: {
-                "Content-Type": "application/json", // Header for JSON
+                "Content-Type": "application/json",
             },
         };
     } catch (error) {
-        console.error("Error logging in:", error);
-
-        // If it's a validation error (incorrect email or password)
-        if (error.message === "Incorrect email or password.") {
-            return {
-                statusCode: 401,
-                body: JSON.stringify({
-                    message: "Incorrect email or password.",
-                    error: true,
-                }),
-                headers: {
-                    "Content-Type": "application/json", // Header for JSON
-                },
-            };
-        }
-
-        // General error handling (500)
+        console.error("❌ Error en el login:", error);
         return {
-            statusCode: 500,
+            statusCode: error?.response?.data?.status ?? 500,
             body: JSON.stringify({
-                message: "Internal server error.",
+                message: error?.response?.data?.error ?? "500 Internal Server Error",
                 error: true,
             }),
             headers: {
-                "Content-Type": "application/json", // Header for JSON
+                "Content-Type": "application/json",
             },
         };
     }
-};
+  };
 
 
 const updateOldPassword = async (event) => {
@@ -202,4 +168,6 @@ const updateOldLanguage = async (event) => {
 module.exports = {
   updateOldPassword: authMiddleware(updateOldPassword),
   updateOldLanguage: authMiddleware(updateOldLanguage),
+  login,
+  register,
 };

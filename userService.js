@@ -29,24 +29,59 @@ async function saveUser(userData) {
     }
 }
 
-async function loginUser(email, password) {
+async function loginUser(event) {
+    const { email, password } = event?.body ? JSON.parse(event.body) : {}
+    if (!email) {
+        return {
+            statusCode: 400,
+            error: true,
+            message: "El email es requerido",
+            data: {},
+        };
+    }
+    if (!password) {
+        return {
+            statusCode: 400,
+            error: true,
+            message: "El password es requerido",
+            data: {},
+        };
+    }
     await connectToDatabase(); // Ensure connection to MongoDB
     try {
         const user = await User.findOne({ email, enabled: true });
         if (!user) {
-            throw new Error("Incorrect email or password.");
+            return {
+                statusCode: 400,
+                error: true,
+                message: "Incorrect email or password.",
+                data: {},
+            };
         }
-
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            throw new Error("Incorrect email or password.");
+            return {
+                statusCode: 400,
+                error: true,
+                message: "Incorrect email or password.",
+                data: {},
+            };
         }
-
         const token = generateToken(user._id);
-        return { token, userId: user._id, language: user.language };
+        return {
+            data: { token, userId: user._id, language: user.language },
+            statusCode: 200,
+            error: false,
+            message: "Login correcto"
+        };
     } catch (error) {
-        console.error("❌ Error in loginUser:", error);
-        throw error;
+        console.error("❌ Error en login:", error);
+        return {
+            statusCode: 500,
+            error: true,
+            message: "Error interno del servidor",
+            data: {},
+        };
     } finally {
         await closeDatabaseConnection(); // Close the connection after completing the operation
     }
