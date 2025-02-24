@@ -7,6 +7,7 @@ provider:
   runtime: nodejs20.x
   stage: ${opt:stage, 'dev'}
   region: us-east-1
+  timeout: 30
   environment:
     MONGODB_URI: ${env:MONGODB_URI}
     DB_NAME: ${env:DB_NAME}
@@ -22,6 +23,7 @@ provider:
         - OPTIONS
         - GET
         - POST
+        - PATCH
       allowCredentials: false
 
 plugins:
@@ -40,3 +42,15 @@ functions:
       - httpApi:
           path: /user/login
           method: post
+  updateOldPassword:
+    handler: handler.updateOldPassword
+    events:
+      - httpApi:
+          path: /user/update_old_password
+          method: patch
+  updateOldLanguage:
+    handler: handler.updateOldLanguage
+    events:
+      - httpApi:
+          path: /user/update_old_language
+          method: patch
