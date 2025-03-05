@@ -1,4 +1,10 @@
-const { saveUser, loginUser, updatePassword, updateLanguage } = require("./userService");
+const {
+    saveUser,
+    loginUser,
+    updatePassword,
+    updateLanguage,
+    updatePasswordSendEmail,
+} = require("./userService");
 const authMiddleware = require("./authMiddleware");
 
 require("dotenv").config();
@@ -96,7 +102,8 @@ const login = async (event) => {
         return {
             statusCode: error?.response?.data?.status ?? 500,
             body: JSON.stringify({
-                message: error?.response?.data?.error ?? "500 Internal Server Error",
+                message:
+                    error?.response?.data?.error ?? "500 Internal Server Error",
                 error: true,
             }),
             headers: {
@@ -104,70 +111,102 @@ const login = async (event) => {
             },
         };
     }
-  };
-
+};
 
 const updateOldPassword = async (event) => {
-  try {
-      const result = await updatePassword(event);
-      return {
-          statusCode: result?.statusCode ?? 200,
-          body: JSON.stringify({
-              message: result?.message ?? "Contraseña actualizada",
-              data: result?.data ?? [],
-              error: result.error ?? false,
-          }),
-          headers: {
-              "Content-Type": "application/json",
-          },
-      };
-  } catch (error) {
-      console.error("❌ Error al actualizar contraseña:", error);
-      return {
-          statusCode: error?.response?.data?.status ?? 500,
-          body: JSON.stringify({
-              message: error?.response?.data?.error ?? "500 Internal Server Error",
-              error: true,
-          }),
-          headers: {
-              "Content-Type": "application/json",
-          },
-      };
-  }
+    try {
+        const result = await updatePassword(event);
+        return {
+            statusCode: result?.statusCode ?? 200,
+            body: JSON.stringify({
+                message: result?.message ?? "Contraseña actualizada",
+                data: result?.data ?? [],
+                error: result.error ?? false,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    } catch (error) {
+        console.error("❌ Error al actualizar contraseña:", error);
+        return {
+            statusCode: error?.response?.data?.status ?? 500,
+            body: JSON.stringify({
+                message:
+                    error?.response?.data?.error ?? "500 Internal Server Error",
+                error: true,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    }
 };
 
 const updateOldLanguage = async (event) => {
-  try {
-      const result = await updateLanguage(event);
-      return {
-          statusCode: result?.statusCode ?? 200,
-          body: JSON.stringify({
-              message: result?.message ?? "Lenguage actualizada",
-              data: result?.data ?? [],
-              error: result.error ?? false,
-          }),
-          headers: {
-              "Content-Type": "application/json",
-          },
-      };
-  } catch (error) {
-      console.error("❌ Error al actualizar lenguage:", error);
-      return {
-          statusCode: error?.response?.data?.status ?? 500,
-          body: JSON.stringify({
-              message: error?.response?.data?.error ?? "500 Internal Server Error",
-              error: true,
-          }),
-          headers: {
-              "Content-Type": "application/json",
-          },
-      };
-  }
+    try {
+        const result = await updateLanguage(event);
+        return {
+            statusCode: result?.statusCode ?? 200,
+            body: JSON.stringify({
+                message: result?.message ?? "Lenguage actualizada",
+                data: result?.data ?? [],
+                error: result.error ?? false,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    } catch (error) {
+        console.error("❌ Error al actualizar lenguage:", error);
+        return {
+            statusCode: error?.response?.data?.status ?? 500,
+            body: JSON.stringify({
+                message:
+                    error?.response?.data?.error ?? "500 Internal Server Error",
+                error: true,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    }
+};
+
+const passwordSendEmail = async (event) => {
+    try {
+        const result = await updatePasswordSendEmail(event);
+        return {
+            statusCode: result?.statusCode ?? 200,
+            body: JSON.stringify({
+                message: result?.message ?? "Correo de recuperación de contraseña",
+                data: result?.data ?? [],
+                error: result.error ?? false,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    } catch (error) {
+        console.error("❌ Error al enviar correo de recuperación de contraseña:", error);
+        return {
+            statusCode: error?.response?.data?.status ?? 500,
+            body: JSON.stringify({
+                message:
+                    error?.response?.data?.error ?? "500 Internal Server Error",
+                error: true,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    }
 };
 
 module.exports = {
-  updateOldPassword: authMiddleware(updateOldPassword),
-  updateOldLanguage: authMiddleware(updateOldLanguage),
-  login,
-  register,
+    updateOldPassword: authMiddleware(updateOldPassword),
+    updateOldLanguage: authMiddleware(updateOldLanguage),
+    login,
+    register,
+    passwordSendEmail,
 };

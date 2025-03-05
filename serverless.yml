@@ -54,3 +54,9 @@ functions:
       - httpApi:
           path: /user/update_old_language
           method: patch
+  passwordSendEmail:
+    handler: handler.passwordSendEmail
+    events:
+      - httpApi:
+          path: /user/password_send_email
+          method: post

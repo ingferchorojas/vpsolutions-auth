@@ -1,5 +1,5 @@
 const bcrypt = require("bcrypt");
-const { generateToken } = require("./utils");
+const { generateToken, sendEmail } = require("./utils");
 const { connectToDatabase, closeDatabaseConnection } = require("./database");
 const User = require("./userModel");
 
@@ -30,7 +30,7 @@ async function saveUser(userData) {
 }
 
 async function loginUser(event) {
-    const { email, password } = event?.body ? JSON.parse(event.body) : {}
+    const { email, password } = event?.body ? JSON.parse(event.body) : {};
     if (!email) {
         return {
             statusCode: 400,
@@ -72,7 +72,7 @@ async function loginUser(event) {
             data: { token, userId: user._id, language: user.language },
             statusCode: 200,
             error: false,
-            message: "Login correcto"
+            message: "Login correcto",
         };
     } catch (error) {
         console.error("❌ Error en login:", error);
@@ -223,4 +223,180 @@ async function updateLanguage(event) {
     }
 }
 
-module.exports = { saveUser, loginUser, updatePassword, updateLanguage };
+async function updatePasswordSendEmail(event) {
+    const { email } = event?.body ? JSON.parse(event.body) : {};
+
+    if (!email) {
+        return {
+            statusCode: 400,
+            error: true,
+            message: "El email es requerido",
+            data: {},
+        };
+    }
+
+    try {
+        await connectToDatabase();
+
+        // Verificar si el usuario existe
+        const user = await User.findOne({ email, enabled: true });
+        if (user) {
+            // Si el usuario existe, enviar correo de recuperación de contraseña
+            const from = "noreply@vpsolutions.cloud"; // Dirección verificada en SES
+            const to = [email]; // Correo del usuario
+            let subject = "Password Recovery";
+            let button_text = "Reset Password";
+            let hello = "Hello";
+            let p1 = "We received a request to reset your password. If you did not request this, please ignore this email.";
+            let p2 = "Click the button below to reset your password:";
+            let rights = "All rights reserved.";
+            let alternative = "If the button doesn't work, copy and paste this link into your browser:";
+
+            const Year = new Date().getFullYear();
+            const link = "https://www.google.com.py";
+
+            if (user?.language && user?.language === "es") {
+                subject = "Recuperación de Contraseña";
+                button_text = "Restablecer Contraseña";
+                hello = "Hola";
+                p1 = "Recibimos una solicitud para restablecer tu contraseña. Si no realizaste esta solicitud, ignora este correo.";
+                p2 = "Haz clic en el botón de abajo para restablecer tu contraseña:";
+                rights = "Todos los derechos reservados.";
+                alternative = "Si el botón no funciona, copia y pega este enlace en tu navegador:";
+            }
+
+            if (user?.language && user?.language === "br") {
+                subject = "Recuperação de Senha";
+                button_text = "Redefinir Senha";
+                hello = "Olá";
+                p1 = "Recebemos uma solicitação para redefinir sua senha. Se você não solicitou isso, ignore este e-mail.";
+                p2 = "Clique no botão abaixo para redefinir sua senha:";
+                rights = "Todos os direitos reservados.";
+                alternative = "Se o botão não funcionar, copie e cole este link no seu navegador:";
+            }
+
+            const html = `<!DOCTYPE html>
+                            <html lang="en">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title>${subject}</title>
+                                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+                                <style>
+                                    body {
+                                        background-color: #f8f9fa;
+                                        font-family: Arial, sans-serif;
+                                    }
+                                    .email-container {
+                                        max-width: 600px;
+                                        margin: 30px auto;
+                                        background-color: #ffffff;
+                                        border-radius: 10px;
+                                        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+                                        overflow: hidden;
+                                    }
+                                    .email-header {
+                                        background-color: #3f51b5;
+                                        color: white;
+                                        padding: 20px;
+                                        text-align: center;
+                                        font-size: 24px;
+                                        font-weight: bold;
+                                    }
+                                    .email-body {
+                                        padding: 30px;
+                                        text-align: center;
+                                    }
+                                    .email-body h1 {
+                                        color: #333;
+                                        font-size: 22px;
+                                        font-weight: bold;
+                                    }
+                                    .email-body p {
+                                        color: #555;
+                                        font-size: 16px;
+                                        line-height: 1.6;
+                                    }
+                                    .btn-custom {
+                                        display: inline-block;
+                                        padding: 12px 20px;
+                                        font-size: 16px;
+                                        font-weight: bold;
+                                        color: #ffffff !important;
+                                        background-color: #3f51b5;
+                                        border-radius: 5px;
+                                        text-decoration: none;
+                                        text-align: center;
+                                        border: none;
+                                        cursor: pointer;
+                                    }
+                                    .email-footer {
+                                        padding: 15px;
+                                        background-color: #f1f1f1;
+                                        text-align: center;
+                                        font-size: 14px;
+                                        color: #666;
+                                    }
+                                    .plain-link {
+                                        margin-top: 15px;
+                                        font-size: 14px;
+                                        color: #3f51b5;
+                                        word-break: break-all;
+                                    }
+                                </style>
+                            </head>
+                            <body>
+
+                                <div class="email-container">
+                                    <div class="email-header">
+                                        VPSolutions - ${subject}
+                                    </div>
+                                    <div class="email-body">
+                                        <h1>${hello}, ${user?.first_name ?? ''}</h1>
+                                        <p>${p1}</p>
+                                        <p>${p2}</p>
+                                        <a href="${link}" class="btn-custom">
+                                            ${button_text}
+                                        </a>
+                                        <p class="plain-link">
+                                            ${alternative} <br>
+                                            <a href="${link}" style="color: #3f51b5; text-decoration: underline;">${link}</a>
+                                        </p>
+                                    </div>
+                                    <div class="email-footer">
+                                        &copy; ${Year} VPSolutions. ${rights}
+                                    </div>
+                                </div>
+                            </body>
+                            </html>`;
+            // Enviar el correo
+            await sendEmail(from, to, subject, html);
+        }
+
+        return {
+            statusCode: 200,
+            error: false,
+            message:
+                "If an account is associated with this email, a password recovery email has been sent.",
+            data: {},
+        };
+    } catch (error) {
+        console.error("❌ Error en updatePasswordSendEmail:", error);
+        return {
+            statusCode: 500,
+            error: true,
+            message: "Error interno del servidor",
+            data: {},
+        };
+    } finally {
+        await closeDatabaseConnection();
+    }
+}
+
+module.exports = {
+    saveUser,
+    loginUser,
+    updatePassword,
+    updateLanguage,
+    updatePasswordSendEmail,
+};
