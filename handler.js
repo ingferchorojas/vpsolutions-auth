@@ -4,6 +4,7 @@ const {
     updatePassword,
     updateLanguage,
     updatePasswordSendEmail,
+    updatePasswordWithToken
 } = require("./userService");
 const authMiddleware = require("./authMiddleware");
 
@@ -203,10 +204,41 @@ const passwordSendEmail = async (event) => {
     }
 };
 
+const updatePasswordToken = async (event) => {
+    try {
+        const result = await updatePasswordWithToken(event);
+        return {
+            statusCode: result?.statusCode ?? 200,
+            body: JSON.stringify({
+                message: result?.message ?? "Actualización de contraseña por token",
+                data: result?.data ?? [],
+                error: result.error ?? false,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    } catch (error) {
+        console.error("❌ Error al actualizar contraseña:", error);
+        return {
+            statusCode: error?.response?.data?.status ?? 500,
+            body: JSON.stringify({
+                message:
+                    error?.response?.data?.error ?? "500 Internal Server Error",
+                error: true,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    }
+};
+
 module.exports = {
     updateOldPassword: authMiddleware(updateOldPassword),
     updateOldLanguage: authMiddleware(updateOldLanguage),
     login,
     register,
     passwordSendEmail,
+    updatePasswordToken,
 };

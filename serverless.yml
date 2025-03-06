@@ -12,6 +12,7 @@ provider:
     MONGODB_URI: ${env:MONGODB_URI}
     DB_NAME: ${env:DB_NAME}
     JWT_SECRET: ${env:JWT_SECRET}
+    JWT_SECRET_CHANGE_PASSWORD: ${env:JWT_SECRET_CHANGE_PASSWORD}
   httpApi:
     cors:
       allowedOrigins:
@@ -59,4 +60,10 @@ functions:
     events:
       - httpApi:
           path: /user/password_send_email
+          method: post
+  updatePasswordToken:
+    handler: handler.updatePasswordToken
+    events:
+      - httpApi:
+          path: /user/password_update_token
           method: post

@@ -13,15 +13,12 @@ async function hashPassword(password) {
 }
 
 // Función para generar un JWT
-function generateToken(userId) {
-    const secret = process.env.JWT_SECRET;
+function generateToken(userId, secret = process.env.JWT_SECRET, expiresIn = "2h") {
     if (!secret) {
-        throw new Error(
-            "JWT_SECRET no está definido en las variables de entorno."
-        );
+        throw new Error("JWT_SECRET no está definido en las variables de entorno.");
     }
 
-    return jwt.sign({ userId }, secret, { expiresIn: "2h" });
+    return jwt.sign({ userId }, secret, { expiresIn });
 }
 
 // Función para enviar correos utilizando SES

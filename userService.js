@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const { generateToken, sendEmail } = require("./utils");
 const { connectToDatabase, closeDatabaseConnection } = require("./database");
 const User = require("./userModel");
+const jwt = require("jsonwebtoken");
 
 async function saveUser(userData) {
     await connectToDatabase(); // Ensure connection to MongoDB
@@ -251,9 +252,11 @@ async function updatePasswordSendEmail(event) {
             let p2 = "Click the button below to reset your password:";
             let rights = "All rights reserved.";
             let alternative = "If the button doesn't work, copy and paste this link into your browser:";
+            let alert = "This link is valid for 30 minutes. If you did not request this change, please ignore this message."
 
             const Year = new Date().getFullYear();
-            const link = "https://www.google.com.py";
+            const token = generateToken(user._id, process.env.JWT_SECRET_CHANGE_PASSWORD, "30m");
+            const link = `https://panel.vpsolutions.cloud/#/change_password?token=${token}`;
 
             if (user?.language && user?.language === "es") {
                 subject = "Recuperación de Contraseña";
@@ -263,6 +266,7 @@ async function updatePasswordSendEmail(event) {
                 p2 = "Haz clic en el botón de abajo para restablecer tu contraseña:";
                 rights = "Todos los derechos reservados.";
                 alternative = "Si el botón no funciona, copia y pega este enlace en tu navegador:";
+                alert = "Este enlace es válido por 30 minutos. Si no solicitaste este cambio, ignora este mensaje.";
             }
 
             if (user?.language && user?.language === "br") {
@@ -273,6 +277,7 @@ async function updatePasswordSendEmail(event) {
                 p2 = "Clique no botão abaixo para redefinir sua senha:";
                 rights = "Todos os direitos reservados.";
                 alternative = "Se o botão não funcionar, copie e cole este link no seu navegador:";
+                alert = "Este link é válido por 30 minutos. Se você não solicitou esta alteração, ignore esta mensagem.";
             }
 
             const html = `<!DOCTYPE html>
@@ -358,6 +363,9 @@ async function updatePasswordSendEmail(event) {
                                         <a href="${link}" class="btn-custom">
                                             ${button_text}
                                         </a>
+                                        <p style="font-size: 14px; color: #6c757d;">
+                                            ${alert}
+                                        </p>
                                         <p class="plain-link">
                                             ${alternative} <br>
                                             <a href="${link}" style="color: #3f51b5; text-decoration: underline;">${link}</a>
@@ -393,10 +401,93 @@ async function updatePasswordSendEmail(event) {
     }
 }
 
+async function updatePasswordWithToken(event) {
+    const { password, token } = event?.body ? JSON.parse(event.body) : {};
+
+    if (!password) {
+        return {
+            statusCode: 400,
+            error: true,
+            message: "Password is required",
+            data: {},
+        };
+    }
+
+    if (password.length < 6) {
+        return {
+            statusCode: 400,
+            error: true,
+            message: "Password must be at least 6 characters long",
+            data: {},
+        };
+    }    
+
+    if (!token) {
+        return {
+            statusCode: 400,
+            error: true,
+            message: "Token is required",
+            data: {},
+        };
+    }
+
+    try {
+        await connectToDatabase();
+
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET_CHANGE_PASSWORD);
+            console.log(decoded);
+
+            // Verify if the user exists
+            const user = await User.findOne({ _id: decoded.userId });
+
+            if (!user) {
+                return {
+                    statusCode: 404,
+                    error: true,
+                    message: "User not found or token invalid",
+                    data: {},
+                };
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await User.updateOne({ _id: user._id }, { password: hashedPassword });
+
+        } catch (error) {
+            console.error("❌ JWT Verification Error:", error);
+            return {
+                statusCode: 401,
+                error: true,
+                message: "Invalid or expired token",
+                data: {},
+            };
+        }
+
+        return {
+            statusCode: 200,
+            error: false,
+            message: "Your password has been successfully changed.",
+            data: {},
+        };
+
+    } catch (error) {
+        console.error("❌ Internal Server Error:", error);
+        return {
+            statusCode: 500,
+            error: true,
+            message: "Internal server error",
+            data: {},
+        };
+    } finally {
+        await closeDatabaseConnection();
+    }
+}
+
 module.exports = {
     saveUser,
     loginUser,
     updatePassword,
     updateLanguage,
     updatePasswordSendEmail,
+    updatePasswordWithToken,
 };
