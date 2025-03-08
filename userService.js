@@ -5,15 +5,15 @@ const User = require("./userModel");
 const jwt = require("jsonwebtoken");
 
 async function saveUser(userData) {
-    await connectToDatabase(); // Ensure connection to MongoDB
+    await connectToDatabase(); // Asegura la conexión a MongoDB
     try {
-        // Check if the email already exists
+        // Verifica si el email ya está registrado
         const existingUser = await User.findOne({ email: userData.email });
         if (existingUser) {
             throw new Error("The email is already registered.");
         }
 
-        // Create and save the user
+        // Cifra la contraseña y guarda el usuario
         const hashedPassword = await bcrypt.hash(userData.password, 10);
         const newUser = new User({
             ...userData,
@@ -21,12 +21,151 @@ async function saveUser(userData) {
         });
         await newUser.save();
 
+        // Genera el token y el enlace de verificación
+        const token = generateToken(userData.email, process.env.JWT_SECRET_VALIDATE_EMAIL, "30m");
+        const link = `https://panel.vpsolutions.cloud/#/activate_account?token=${token}`;
+
+        // 📧 Traducciones del correo según el idioma del usuario
+        let subject = "Verify Your Email";
+        let button_text = "Verify Email";
+        let hello = "Hello";
+        let p1 = "Thank you for signing up! Please verify your email to activate your account.";
+        let p2 = "Click the button below to verify your email:";
+        let rights = "All rights reserved.";
+        let alternative = "If the button doesn't work, copy and paste this link into your browser:";
+        let alert = "This link is valid for 30 minutes. If you did not request this, please ignore this message.";
+
+        if (userData?.language === "es") {
+            subject = "Verifica tu correo electrónico";
+            button_text = "Verificar Correo";
+            hello = "Hola";
+            p1 = "¡Gracias por registrarte! Por favor, verifica tu correo electrónico para activar tu cuenta.";
+            p2 = "Haz clic en el botón de abajo para verificar tu correo:";
+            rights = "Todos los derechos reservados.";
+            alternative = "Si el botón no funciona, copia y pega este enlace en tu navegador:";
+            alert = "Este enlace es válido por 30 minutos. Si no solicitaste esto, ignora este mensaje.";
+        }
+
+        if (userData?.language === "br") {
+            subject = "Verifique seu e-mail";
+            button_text = "Verificar E-mail";
+            hello = "Olá";
+            p1 = "Obrigado por se inscrever! Por favor, verifique seu e-mail para ativar sua conta.";
+            p2 = "Clique no botão abaixo para verificar seu e-mail:";
+            rights = "Todos os direitos reservados.";
+            alternative = "Se o botão não funcionar, copie e cole este link no seu navegador:";
+            alert = "Este link é válido por 30 minutos. Se você não solicitou isso, ignore esta mensagem.";
+        }
+
+        // 📩 Plantilla del correo
+        const Year = new Date().getFullYear();
+        const html = `<!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>${subject}</title>
+                            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+                            <style>
+                                body {
+                                    background-color: #f8f9fa;
+                                    font-family: Arial, sans-serif;
+                                }
+                                .email-container {
+                                    max-width: 600px;
+                                    margin: 30px auto;
+                                    background-color: #ffffff;
+                                    border-radius: 10px;
+                                    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+                                    overflow: hidden;
+                                }
+                                .email-header {
+                                    background-color: #3f51b5;
+                                    color: white;
+                                    padding: 20px;
+                                    text-align: center;
+                                    font-size: 24px;
+                                    font-weight: bold;
+                                }
+                                .email-body {
+                                    padding: 30px;
+                                    text-align: center;
+                                }
+                                .email-body h1 {
+                                    color: #333;
+                                    font-size: 22px;
+                                    font-weight: bold;
+                                }
+                                .email-body p {
+                                    color: #555;
+                                    font-size: 16px;
+                                    line-height: 1.6;
+                                }
+                                .btn-custom {
+                                    display: inline-block;
+                                    padding: 12px 20px;
+                                    font-size: 16px;
+                                    font-weight: bold;
+                                    color: #ffffff !important;
+                                    background-color: #3f51b5;
+                                    border-radius: 5px;
+                                    text-decoration: none;
+                                    text-align: center;
+                                    border: none;
+                                    cursor: pointer;
+                                }
+                                .email-footer {
+                                    padding: 15px;
+                                    background-color: #f1f1f1;
+                                    text-align: center;
+                                    font-size: 14px;
+                                    color: #666;
+                                }
+                                .plain-link {
+                                    margin-top: 15px;
+                                    font-size: 14px;
+                                    color: #3f51b5;
+                                    word-break: break-all;
+                                }
+                            </style>
+                        </head>
+                        <body>
+
+                            <div class="email-container">
+                                <div class="email-header">
+                                    VPSolutions - ${subject}
+                                </div>
+                                <div class="email-body">
+                                    <h1>${hello}, ${userData?.first_name ?? ''}</h1>
+                                    <p>${p1}</p>
+                                    <p>${p2}</p>
+                                    <a href="${link}" class="btn-custom">
+                                        ${button_text}
+                                    </a>
+                                    <p style="font-size: 14px; color: #6c757d;">
+                                        ${alert}
+                                    </p>
+                                    <p class="plain-link">
+                                        ${alternative} <br>
+                                        <a href="${link}" style="color: #3f51b5; text-decoration: underline;">${link}</a>
+                                    </p>
+                                </div>
+                                <div class="email-footer">
+                                    &copy; ${Year} VPSolutions. ${rights}
+                                </div>
+                            </div>
+                        </body>
+                        </html>`;
+
+        // Enviar el correo de verificación
+        await sendEmail("noreply@vpsolutions.cloud", [userData.email], subject, html);
+
         return newUser._id;
     } catch (error) {
         console.error("❌ Error in saveUser:", error);
         throw error;
     } finally {
-        await closeDatabaseConnection(); // Close the connection after completing the operation
+        await closeDatabaseConnection(); // Cierra la conexión después de la operación
     }
 }
 

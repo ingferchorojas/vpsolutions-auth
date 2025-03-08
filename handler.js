@@ -15,7 +15,7 @@ const register = async (event) => {
         const body = JSON.parse(event.body);
 
         // Validate required fields
-        const { first_name, last_name, email, password } = body;
+        const { first_name, last_name, email, password, language } = body;
         if (!first_name || !last_name || !email || !password) {
             return {
                 statusCode: 400,
@@ -36,7 +36,8 @@ const register = async (event) => {
                 last_name,
                 email,
                 password,
-                enabled: true,
+                enabled: false,
+                language
             });
 
             return {

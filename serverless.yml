@@ -13,6 +13,7 @@ provider:
     DB_NAME: ${env:DB_NAME}
     JWT_SECRET: ${env:JWT_SECRET}
     JWT_SECRET_CHANGE_PASSWORD: ${env:JWT_SECRET_CHANGE_PASSWORD}
+    JWT_SECRET_VALIDATE_EMAIL: ${env:JWT_SECRET_VALIDATE_EMAIL}
   httpApi:
     cors:
       allowedOrigins:
