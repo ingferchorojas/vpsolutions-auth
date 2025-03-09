@@ -68,3 +68,9 @@ functions:
       - httpApi:
           path: /user/password_update_token
           method: post
+  activateAccountToken:
+    handler: handler.activateAccountToken
+    events:
+      - httpApi:
+          path: /user/activate_account
+          method: post

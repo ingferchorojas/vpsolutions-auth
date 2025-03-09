@@ -169,6 +169,52 @@ async function saveUser(userData) {
     }
 }
 
+async function activateAccount(event) {
+    const { token } = event?.body ? JSON.parse(event.body) : {};
+    if (!token) {
+        return {
+            statusCode: 400,
+            error: true,
+            message: "Token is required",
+            data: {},
+        };
+    }
+    await connectToDatabase();
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_VALIDATE_EMAIL);
+        // Verify if the user exists
+        const user = await User.findOne({ email: decoded.userId });
+        if (!user) {
+            return {
+                statusCode: 404,
+                error: true,
+                message: "User not found or token invalid",
+                data: {},
+            };
+        }
+
+        await User.updateOne({ email: decoded.userId }, { enabled: true, email_verified: true })
+
+        return {
+            data: {},
+            statusCode: 200,
+            error: false,
+            message: "Cuenta activada correctamente",
+        };
+    } catch (error) {
+        console.error("❌ Error en activateAccount:", error);
+        return {
+            statusCode: 500,
+            error: true,
+            message: "Error interno del servidor",
+            data: {},
+        };
+    } finally {
+        await closeDatabaseConnection();
+    }
+}
+
+
 async function loginUser(event) {
     const { email, password } = event?.body ? JSON.parse(event.body) : {};
     if (!email) {
@@ -629,4 +675,5 @@ module.exports = {
     updateLanguage,
     updatePasswordSendEmail,
     updatePasswordWithToken,
+    activateAccount,
 };

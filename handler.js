@@ -4,7 +4,8 @@ const {
     updatePassword,
     updateLanguage,
     updatePasswordSendEmail,
-    updatePasswordWithToken
+    updatePasswordWithToken,
+    activateAccount
 } = require("./userService");
 const authMiddleware = require("./authMiddleware");
 
@@ -235,6 +236,36 @@ const updatePasswordToken = async (event) => {
     }
 };
 
+const activateAccountToken = async (event) => {
+    try {
+        const result = await activateAccount(event);
+        return {
+            statusCode: result?.statusCode ?? 200,
+            body: JSON.stringify({
+                message: result?.message ?? "Cuenta activada por token",
+                data: result?.data ?? [],
+                error: result.error ?? false,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    } catch (error) {
+        console.error("❌ Error al activar cuenta:", error);
+        return {
+            statusCode: error?.response?.data?.status ?? 500,
+            body: JSON.stringify({
+                message:
+                    error?.response?.data?.error ?? "500 Internal Server Error",
+                error: true,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+    }
+};
+
 module.exports = {
     updateOldPassword: authMiddleware(updateOldPassword),
     updateOldLanguage: authMiddleware(updateOldLanguage),
@@ -242,4 +273,5 @@ module.exports = {
     register,
     passwordSendEmail,
     updatePasswordToken,
+    activateAccountToken,
 };
